@@ -140,6 +140,10 @@ def create_page(req: CreatePageRequest):
 3. 서버 실행
 
    ```bash
+   uvicorn server_confluence:app --host 0.0.0.0 --port 8000
+   ```
+codespace에서 실행시
+   ```bash
    uvicorn server_confluence:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips="*"
    ```
 
