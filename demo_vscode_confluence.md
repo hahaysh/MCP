@@ -140,11 +140,11 @@ def create_page(req: CreatePageRequest):
 3. 서버 실행
 
    ```bash
-   uvicorn server_confluence:app --host 0.0.0.0 --port 8000
+   uvicorn server_confluence:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips="*"
    ```
 
    실행 후 `http://localhost:8000/docs`에 접속하면 API 문서를 확인할 수 있습니다.
-> codespace환경이면 필히 "https://super-broccoli-9qp7p4vq5c799w-8000.app.github.dev/docs" 맨뒤쪽에 docs <-- 경로를 꼭 확인하세요.
+> codespace환경이면 필히 "https://super-broccoli-9qp7p4vq5c799w-8000.app.github.dev/docs" 맨뒤쪽에 /docs <-- 경로를 꼭 확인하세요.
 
 ---
 
@@ -158,6 +158,17 @@ def create_page(req: CreatePageRequest):
     "confluence-local": {
       "type": "http",
       "url": "http://localhost:8000"
+    }
+  }
+}
+```
+codespace에서 실행시에는 아래로 설정
+```json
+{
+  "servers": {
+    "confluence-local": {
+      "type": "openapi",
+      "url": "http://localhost:8000/openapi.json"
     }
   }
 }
