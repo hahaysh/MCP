@@ -48,6 +48,9 @@ API 토큰은 비밀번호 대신 프로그램이 Confluence에 안전하게 접
 
 ### 2단계: Python MCP 서버 코드 준비
 
+> ✅ 이후의 진행은 codespace에서 진행을 합니다.
+> 작업은 dev20250926 브랜치를 만들어서 작업합니다. `git switch -c dev20250926`
+
 프로젝트 폴더 안에 `server_confluence.py` 파일을 생성하고 아래 코드를 붙여 넣으세요:
 
 ```python
