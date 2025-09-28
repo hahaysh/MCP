@@ -10,19 +10,41 @@
 ✔ Confluence API 토큰 발급 (계정 이메일과 함께 사용)
 ✔ 조직 네트워크나 방화벽 정책이 Confluence API 호출을 허용하는지 확인
 
+알겠습니다 👍 기존 실습가이드 톤에 맞춰 **1단계만 수정한 버전**을 드립니다. (다른 단계는 건드리지 않았습니다.)
+
 ---
 
-### 1단계: API 토큰 발급하기 (Atlassian)
+### 1단계: Confluence 연결 정보 확인하기
 
-| 순서 | 실행 항목                                                                   | 비고                     |
-| -- | ----------------------------------------------------------------------- | ---------------------- |
-| 1  | 브라우저에서 `https://id.atlassian.com/manage-profile/security/api-tokens` 접속 | Atlassian 계정 보안 설정 페이지 |
-| 2  | **Create API token** 클릭                                                 | 토큰 생성 화면 열림            |
-| 3  | 토큰 이름 입력, 만료 기간(1~365일) 선택                                              | 식별하기 쉬운 이름 권장          |
-| 4  | **Create / Generate** 클릭 → 토큰 생성                                        | 생성 직후 토큰 값이 화면에 표시됨    |
-| 5  | 표시된 토큰을 **즉시 복사 및 안전한 곳에 저장**                                           | 토큰은 다시 볼 수 없음          |
+이 단계에서는 `mcp.json` 설정에 입력할 **Confluence URL, 사용자 이메일(Username), API 토큰**을 미리 준비합니다.
 
-> ✅ 이 API 토큰은 VS Code와 Confluence 사이에 있는 **자체 Python MCP 서버**에서 REST API 인증에 사용됩니다.
+#### 1. Confluence URL
+
+* 사용 중인 [Confluence 사이트](https://www.atlassian.com/ko/software/confluence)에 로그인했을 때 브라우저 주소창에 표시되는 **기본 URL**입니다.
+* 메모장 등에 복사해 두세요.
+* **예시**: `https://your-domain.atlassian.net/wiki`
+
+#### 2. Confluence 사용자 이름 (Username)
+
+* Confluence(Atlassian) 계정에 로그인할 때 사용하는 **본인 이메일 주소**입니다.
+* 메모장 등에 복사해 두세요.
+* **예시**: `your-email@example.com`
+
+#### 3. Confluence API 토큰 (API Token)
+
+API 토큰은 비밀번호 대신 프로그램이 Confluence에 안전하게 접근할 수 있도록 해주는 인증 키입니다.
+
+1. 브라우저에서 Atlassian API 토큰 발급 페이지 접속 → [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. **Create API token** 버튼 클릭
+3. 이름(Label)을 입력 (예: `python-mcp-token`)
+4. **Create** 버튼 클릭 → 새 토큰 생성
+5. 화면에 나타난 토큰을 **즉시 복사 및 안전한 곳에 저장**
+
+   > ⚠️ 토큰은 화면을 닫으면 다시 볼 수 없으니 반드시 안전하게 보관하세요.
+
+---
+
+> ✅ 준비된 URL, 이메일, API 토큰은 VS Code와 Confluence 사이에서 **자체 Python MCP 서버**의 REST API 인증에 사용됩니다.
 
 ---
 
