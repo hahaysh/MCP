@@ -1,0 +1,34 @@
+{
+  "name": "Python (latest + pytest + unittest)",
+  "image": "mcr.microsoft.com/devcontainers/python:latest",
+
+  // Node 설치(필수): mcp-remote 실행용
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"        // 18+ 권장, 20 예시
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-python-envs",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      // MCP 서버 정의(= .vscode/mcp.json 대체)
+      "mcp": {
+        "servers": {
+          "atlassian-rovo": {
+            "command": "npx",
+            "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/sse"]
+          }
+        }
+      }
+    }
+  },
+
+  // 컨테이너 생성 직후 최신 상태로 패키지 업데이트
+  "postCreateCommand": "pip install --upgrade pip setuptools wheel && pytest --version && python -m unittest --help"
+}
