@@ -234,5 +234,3 @@ codespace에서 실행시에는 http://localhost:8000/ 루트를 보지 못해�
 * DevContainer `customizations.vscode.mcp.servers`에 등록하여 자동 설정
 
 ---
-
-✅ 이렇게 하면 **Node.js, mcp-remote, OAuth 로그인 없이** 순수 Python + API 토큰 기반으로 Confluence를 Copilot과 연결할 수 있습니다.
