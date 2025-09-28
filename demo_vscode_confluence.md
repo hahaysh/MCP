@@ -19,6 +19,41 @@
 
    * 이 방식은 **레포지토리 단위 공유**에 유리합니다(같은 폴더를 연 사람은 동일 설정 사용). ([GitHub Docs][3])
 
+
+3. **MCP 설정은 `.vscode/mcp.json`에만 국한되지 않습니다.**
+VS Code와 GitHub Copilot은 MCP 설정을 **세 가지 위치**에서 읽어올 수 있어요.
+
+##### 🔧 MCP 설정 가능한 위치
+- **워크스페이스 설정 (권장, 협업용)**
+
+   * 위치: `<repo-root>/.vscode/mcp.json`
+   * 특정 프로젝트(리포지토리)에만 적용됩니다.
+   * 장점: 같은 리포를 연 팀원들이 동일한 MCP 서버 구성을 공유할 수 있음.
+   * 예: 교육 실습/팀 프로젝트 리포 안에 넣어두면, 모두가 바로 같은 MCP 서버 사용 가능.
+
+- **사용자 전역 설정 (User Configuration)**
+
+   * VS Code 명령 팔레트(`Ctrl+Shift+P`) → **MCP: Open User Configuration** 실행
+   * OS 사용자 프로필 안에 저장됩니다. (예: `~/.vscode/mcp.json` 또는 OS별 AppData 위치)
+   * 장점: 모든 프로젝트에서 동일하게 MCP 서버 사용 가능.
+   * 예: 개인적으로 GitHub MCP, Confluence MCP 같은 서버를 항상 쓰고 싶을 때.
+
+- **Dev Container / Codespaces 설정**
+
+   * `devcontainer.json` → `customizations.vscode.mcp.servers` 항목에 MCP 서버 추가 가능
+   * 컨테이너 실행 시 자동으로 MCP 설정이 적용됩니다.
+   * 장점: 클라우드 Codespace, 사내 Dev Container 환경에서도 일관되게 MCP 서버가 붙음.
+
+
+##### 📌 요약
+
+* **프로젝트 공유** = `.vscode/mcp.json`
+* **개인 전역** = MCP: Open User Configuration
+* **컨테이너/클라우드 환경** = `devcontainer.json`
+
+
+##### 👉 즉, 상황에 따라 **세 가지 레벨**에서 MCP 설정을 할 수 있고, `.vscode/mcp.json`은 그 중 “워크스페이스 단위”일 뿐이에요.
+
 ---
 
 ## 2) Atlassian Rovo MCP 서버 등록(권장: mcp-remote 프록시)
