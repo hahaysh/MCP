@@ -59,12 +59,16 @@ import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 app = FastAPI(title="Confluence MCP Server")
 
-CONFLUENCE_URL = os.getenv("CONFLUENCE_URL", "https://your-domain.atlassian.net/wiki")
-EMAIL = os.getenv("ATLASSIAN_EMAIL", "you@example.com")
-API_TOKEN = os.getenv("ATLASSIAN_API_TOKEN", "your_api_token")
+CONFLUENCE_URL = os.getenv("CONFLUENCE_URL")
+EMAIL = os.getenv("ATLASSIAN_EMAIL")
+API_TOKEN = os.getenv("ATLASSIAN_API_TOKEN")
 
 auth = HTTPBasicAuth(EMAIL, API_TOKEN)
 
@@ -121,22 +125,29 @@ def create_page(req: CreatePageRequest):
    ```bash
    python -m venv .venv
    source .venv/bin/activate   # (Windows: .venv\Scripts\activate)
-   pip install fastapi uvicorn requests pydantic
+   pip install fastapi uvicorn requests pydantic python-dotenv
    ```
 
-2. 환경 변수 등록
+   > ✅ `python-dotenv` 패키지를 추가 설치해야 `.env` 파일을 불러올 수 있습니다.
 
-   ```bash
-   export CONFLUENCE_URL="https://<your-domain>.atlassian.net/wiki"
-   export ATLASSIAN_EMAIL="you@example.com"
-   export ATLASSIAN_API_TOKEN="your_api_token"
+2. 환경 변수 등록 대신 `.env` 파일을 준비합니다.
+   (`.env` 파일은 프로젝트 루트에 위치)
+
    ```
+   CONFLUENCE_URL=https://your-domain.atlassian.net/wiki
+   ATLASSIAN_EMAIL=you@example.com
+   ATLASSIAN_API_TOKEN=your_api_token
+   ```
+
+   > 더 이상 `export`나 `set` 명령어로 직접 등록할 필요가 없습니다.
 
 3. 서버 실행
 
    ```bash
    uvicorn server_confluence:app --host 0.0.0.0 --port 8000
    ```
+
+   실행 후 `http://localhost:8000/docs`에 접속하면 API 문서를 확인할 수 있습니다.
 
 ---
 
