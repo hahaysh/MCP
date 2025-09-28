@@ -32,14 +32,13 @@
 
 API 토큰은 비밀번호 대신 프로그램이 Confluence에 안전하게 접근할 수 있도록 해주는 인증 키입니다.
 
+1. 브라우저에서 Atlassian API 토큰 발급 페이지 접속 → [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. **Create API token** 버튼 클릭
+3. 이름(Label)을 입력 (예: `python-mcp-token`)
+4. **Create** 버튼 클릭 → 새 토큰 생성
+5. 화면에 나타난 토큰을 **즉시 복사 및 안전한 곳에 저장**
 
-| 순서 | 실행 항목                                                                   | 비고                     |
-| -- | ----------------------------------------------------------------------- | ---------------------- |
-| 1  | 브라우저에서 `https://id.atlassian.com/manage-profile/security/api-tokens` 접속 | Atlassian 계정 보안 설정 페이지 |
-| 2  | **Create API token** 클릭                                                 | 토큰 생성 화면 열림            |
-| 3  | 토큰 이름 입력, 만료 기간(1~365일) 선택                                              | 식별하기 쉬운 이름 권장          |
-| 4  | **Create / Generate** 클릭 → 토큰 생성                                        | 생성 직후 토큰 값이 화면에 표시됨    |
-| 5  | 표시된 토큰을 **즉시 복사 및 안전한 곳에 저장**                                           | 토큰은 다시 볼 수 없음          |
+   > ⚠️ 토큰은 화면을 닫으면 다시 볼 수 없으니 반드시 안전하게 보관하세요.
 
 ---
 
