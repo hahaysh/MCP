@@ -187,7 +187,8 @@ codespace에서 실행시에는 http://localhost:8000/ 루트를 보지 못해�
 
 1. VS Code에서 **Copilot Chat** 열기
 2. 상단 드롭다운에서 **Agent 모드** 선택
-3. **Tools(🔧)** → `MCP Server: confluence-local` 확인 및 활성화
+3. **Tools**에서 → `MCP Server: confluence-local` 확인 및 활성화
+<img width="362" height="272" alt="image" src="https://github.com/user-attachments/assets/ef9c4527-7e38-4272-a41a-b17e9706a6f9" />
 
 ---
 
