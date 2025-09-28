@@ -1,66 +1,41 @@
-# VS Code + Confluence(Atlassian Rovo) MCP 서버 연동 가이드
-
-> 목표: VS Code에서 Atlassian Rovo **MCP 서버**를 등록하고, **GitHub Copilot(Agent 모드)**에서 Confluence 관련 작업(검색/조회/생성 등)을 실행합니다.
-> MCP 설정 파일은 **`.vscode/mcp.json`** 를 사용합니다. ([Visual Studio Code][1])
-
-## 준비물(Prerequisites)
-
-* **VS Code 1.102+** 및 **GitHub Copilot** 확장 설치(로그인 포함) ([Visual Studio Code][1])
-* **Atlassian Cloud** 사이트(Confluence 사용 가능) 계정
-* **Node.js v18+** (VS Code가 `npx mcp-remote`를 실행할 때 필요) ([Atlassian Support][2])
-* (조직 정책) 외부 MCP 사용 허용 여부 확인
+## 🎯 실습 가이드: VS Code + Confluence Rovo MCP 서버 연동 단계별
 
 ---
 
-## 1) 워크스페이스 열기 & 설정 파일 위치 만들기
+### 준비: 필수 사항 점검
 
-1. VS Code로 실습용 폴더(또는 Git 저장소)를 엽니다.
-2. 루트에 **`.vscode`** 폴더가 없다면 생성하고, 그 안에 **`mcp.json`** 파일을 만듭니다.
-
-   * 이 방식은 **레포지토리 단위 공유**에 유리합니다(같은 폴더를 연 사람은 동일 설정 사용). ([GitHub Docs][3])
-
-
-3. **MCP 설정은 `.vscode/mcp.json`에만 국한되지 않습니다.**
-VS Code와 GitHub Copilot은 MCP 설정을 **세 가지 위치**에서 읽어올 수 있어요.
-
-##### 🔧 MCP 설정 가능한 위치
-- **워크스페이스 설정 (권장, 협업용)**
-
-   * 위치: `<repo-root>/.vscode/mcp.json`
-   * 특정 프로젝트(리포지토리)에만 적용됩니다.
-   * 장점: 같은 리포를 연 팀원들이 동일한 MCP 서버 구성을 공유할 수 있음.
-   * 예: 교육 실습/팀 프로젝트 리포 안에 넣어두면, 모두가 바로 같은 MCP 서버 사용 가능.
-
-- **사용자 전역 설정 (User Configuration)**
-
-   * VS Code 명령 팔레트(`Ctrl+Shift+P`) → **MCP: Open User Configuration** 실행
-   * OS 사용자 프로필 안에 저장됩니다. (예: `~/.vscode/mcp.json` 또는 OS별 AppData 위치)
-   * 장점: 모든 프로젝트에서 동일하게 MCP 서버 사용 가능.
-   * 예: 개인적으로 GitHub MCP, Confluence MCP 같은 서버를 항상 쓰고 싶을 때.
-
-- **Dev Container / Codespaces 설정**
-
-   * `devcontainer.json` → `customizations.vscode.mcp.servers` 항목에 MCP 서버 추가 가능
-   * 컨테이너 실행 시 자동으로 MCP 설정이 적용됩니다.
-   * 장점: 클라우드 Codespace, 사내 Dev Container 환경에서도 일관되게 MCP 서버가 붙음.
-
-
-##### 📌 요약
-
-* **프로젝트 공유** = `.vscode/mcp.json`
-* **개인 전역** = MCP: Open User Configuration
-* **컨테이너/클라우드 환경** = `devcontainer.json`
-
-
-##### 👉 즉, 상황에 따라 **세 가지 레벨**에서 MCP 설정을 할 수 있고, `.vscode/mcp.json`은 그 중 “워크스페이스 단위”일 뿐이에요.
+✔ VS Code 설치 + GitHub Copilot 확장 설치 및 로그인
+✔ Node.js ≥ v18 설치
+✔ Atlassian Cloud 계정 (Confluence 사용 가능)
+✔ 조직 네트워크나 방화벽 정책이 외부 MCP 접속을 허용하는지 확인
 
 ---
 
-## 2) Atlassian Rovo MCP 서버 등록(권장: mcp-remote 프록시)
+### 1단계: API 토큰 발급하기 (Atlassian)
 
-Atlassian이 안내하는 권장 방법은 **`mcp-remote`** 프록시를 통해 원격 Rovo MCP 서버(`https://mcp.atlassian.com/v1/sse`)에 연결하는 것입니다. VS Code는 아래처럼 **표준 입출력(stdio)** 방식으로 프로세스를 띄울 수 있습니다. ([Atlassian Support][2])
+| 순서 | 실행 항목                                                                   | 비고                                              |
+| -- | ----------------------------------------------------------------------- | ----------------------------------------------- |
+| 1  | 브라우저로 이동: `https://id.atlassian.com/manage-profile/security/api-tokens` | Atlassian 계정 보안 설정 페이지로 이동                      |
+| 2  | **Create API token** 또는 **Create API token with scopes** 클릭             | 토큰 생성 화면 열림                                     |
+| 3  | 토큰 이름 입력, 만료 기간(1~365일) 선택                                              | 식별하기 쉬운 이름 권장                                   |
+| 4  | **Create / Generate** 클릭 → 새 토큰 생성                                      | 이때 토큰이 화면에 표시됨                                  |
+| 5  | 화면에 나타난 토큰을 **즉시 복사 및 안전한 곳에 저장**                                       | 토큰은 다시 볼 수 없으므로 보관해야 함 ([Atlassian Support][1]) |
 
-`.vscode/mcp.json`:
+> ✅ 이 API 토큰은 나중에 IDE/서버 설정에서 이메일과 조합하여 인증용으로 사용됩니다.
+
+---
+
+### 2단계: VS Code 워크스페이스 열기 & `mcp.json` 파일 준비
+
+1. VS Code에서 실습용 프로젝트 폴더 열기
+2. 루트 디렉터리에 `.vscode` 폴더가 없다면 생성
+3. `.vscode/mcp.json` 파일 생성
+
+---
+
+### 3단계: `.vscode/mcp.json` 내용 채우기 (mcp-remote 방식 권장)
+
+아래 내용을 복사해서 `mcp.json`에 붙여 넣고 저장하세요:
 
 ```json
 {
@@ -73,109 +48,69 @@ Atlassian이 안내하는 권장 방법은 **`mcp-remote`** 프록시를 통해 
 }
 ```
 
-> 왜 `mcp-remote`?
-> OAuth 인증과 SSE 통신을 **프록시가 대신 처리**해 주어 VS Code/에디터 연동이 쉬워집니다(베타). ([Atlassian Support][2])
+* `mcp-remote`는 OAuth 인증 및 SSE 연결을 프록시가 대신 처리해 줍니다. ([Atlassian Support][2])
+* 저장하면 VS Code 내에서 **Start / Restart** 버튼이 나타납니다.
 
 ---
 
-## 3) 서버 시작 & 로그인
+### 4단계: MCP 서버 시작 및 인증 흐름
 
-1. `mcp.json`을 저장하면 파일 상단에 **Start/Restart** 액션이 나타납니다. **Start**를 클릭하세요. ([Visual Studio Code][1])
-2. 브라우저가 열리며 Atlassian 로그인 및 권한 승인을 진행합니다(OAuth).
-3. 성공하면 VS Code에 **Running** 상태로 표시됩니다.
-
-> 팁: 인증 토큰이 만료되면 **서버 재시작**으로 다시 로그인하면 됩니다. ([Atlassian Support][2])
-
----
-
-## 4) Copilot에서 도구 확인(Agent 모드)
-
-1. VS Code **Chat 뷰**를 열고, 상단 드롭다운에서 **Agent** 모드로 전환합니다.
-2. **Tools(🔧) 버튼**을 눌러 사용 가능한 도구 목록을 확인하고, `MCP Server: atlassian-rovo` 관련 도구를 선택합니다.
-3. 이제 채팅 입력창에서 자연어로 지시하면, 필요 시 MCP 도구가 자동 호출됩니다. ([Visual Studio Code][1])
+1. `mcp.json` 저장 후, VS Code에서 **Start** 버튼 클릭
+2. 브라우저가 팝업되며 Atlassian 로그인/권한 승인 화면이 뜸
+3. 로그인 & 승인을 완료하면 VS Code에서 MCP 서버가 **Running** 상태로 표시됨
+4. 만약 인증 실패나 토큰 만료 등이 발생하면 **Restart** 버튼으로 다시 실행
 
 ---
 
-## 5) 바로 써보는 예시 프롬프트
+### 5단계: Copilot 에이전트 모드 설정 & 도구 확인
 
-> 실제 제공 도구 이름은 서버/버전별로 조금 다를 수 있습니다. 아래는 “형태 예시”입니다.
-
-* **페이지 검색**
-  `Search Confluence pages about "onboarding checklist" in space HR.`
-* **페이지 가져오기**
-  `Get the Confluence page by title "2025-Q4 OKRs" in space OPS.`
-* **새 페이지 생성(요약 포함)**
-  `Create a Confluence page in space ENG titled "MCP Trial Notes" with a summary section and a task list.`
-* **링크/첨부 확인**
-  `List attachments and outgoing links for the current page.`
+1. VS Code에서 **Copilot Chat** 뷰 열기
+2. 드롭다운 메뉴에서 **Agent 모드** 선택
+3. **Tools (🔧)** 버튼 클릭 → `MCP Server: atlassian-rovo` 도구가 보이는지 확인
+4. 도구가 보이지 않으면 체크표시해서 활성화
 
 ---
 
-## 6) (선택) 원격 서버 URL 직접 등록 방식
+### 6단계: 예시 프롬프트로 기능 테스트
 
-일부 클라이언트는 아래처럼 **원격 서버 URL을 직접** 등록하기도 합니다. VS Code는 `http/sse` 타입을 지원합니다. 다만 **OAuth 흐름 때문에 `mcp-remote` 방식이 더 호환성 좋습니다.** ([Visual Studio Code][1])
+아래 예시를 그대로 복사해 Chat 입력창에 넣고 실행해 보세요:
 
-```json
-{
-  "servers": {
-    "atlassian-rovo": {
-      "type": "sse",
-      "url": "https://mcp.atlassian.com/v1/sse"
-    }
-  }
-}
-```
+* 페이지 검색:
 
----
+  > `Search Confluence pages about "onboarding checklist" in space HR and list top 5 with links.`
+* 페이지 단건 조회:
 
-## 7) 트러블슈팅
+  > `Get the Confluence page by title "2025-Q4 OKRs" in space OPS.`
+* 페이지 생성:
 
-* **서버가 안 뜨거나 금방 꺼짐**
+  > `Create a Confluence page in space ENG titled "MCP Trial Notes" with sections: Summary, Decisions, Action Items.`
+* 문서 링크/첨부 보기:
 
-  * Node.js 18+ / `npx` 사용 가능 여부 확인
-  * `mcp.json` JSON 문법 오류 확인
-  * **MCP: Show Installed Servers** / **List Servers**로 상태 확인 ([Visual Studio Code][1])
-* **도구가 보이지 않음**
-
-  * Chat에서 **Agent 모드**인지, Tools에서 해당 서버 도구가 **선택**되어 있는지 확인 ([Visual Studio Code][1])
-* **인증 팝업이 안 뜸/권한 오류**
-
-  * VS Code에서 서버 **Restart**
-  * 조직의 Atlassian/SSO 정책 확인(Cloud 베타 기능) ([Atlassian Support][4])
-* **보안 우려(서드파티 서버 사용)**
-
-  * Rovo(Atlassian) 공식 원격 서버만 사용하거나, 커뮤니티 서버 사용 시 **코드/권한**을 반드시 검토하세요. ([Atlassian Support][4])
+  > `List attachments and outgoing links for the current page.`
 
 ---
 
-## 8) 정리(요점)
+### 7단계: 발생 가능한 문제 & 해결 체크리스트
 
-* `.vscode/mcp.json`에 Atlassian Rovo MCP를 등록
-* **Start → 로그인 승인 → Running**
-* Copilot **Agent 모드 + Tools**에서 Confluence 작업 실행
-* 필요 시 PR/이슈 자동화 등 **팀 협업 플로우**로 확장
-
----
-
-## 부록 A) 전역 설정으로 쓰기
-
-여러 프로젝트에서 공통으로 쓰고 싶다면, **MCP: Open User Configuration** 명령으로 **사용자 전역 `mcp.json`**에 추가할 수 있습니다. (워크스페이스/전역/리모트별 저장 위치 지원) ([Visual Studio Code][1])
-
-## 부록 B) Dev Containers에 포함시키기
-
-`devcontainer.json`의 `customizations.vscode.mcp.servers`에 동일한 구성을 넣으면, 컨테이너 생성 시 자동 반영됩니다. ([Visual Studio Code][1])
+| 문제                | 원인 가능성                         | 해결 방법                          |
+| ----------------- | ------------------------------ | ------------------------------ |
+| 서버 시작 안 됨 / 바로 종료 | Node 버전 낮거나 `npx` 실행 불가        | Node v18+ 설치 / `npx` 정상 동작 확인  |
+| MCP 도구 안 보임       | Agent 모드 선택 안 함 또는 Tools 비활성화  | Agent 모드 선택 / Tools 메뉴에서 서버 체크 |
+| 인증 팝업 안 뜸         | 브라우저 팝업 차단 또는 조직 SSO 제한        | 팝업 허용 / 조직 정책 확인 / Restart 시도  |
+| 권한/접근 오류          | Atlassian 계정 권한 부족 또는 토큰 권한 축소 | 계정 권한 확인 / 토큰 재발급              |
 
 ---
 
-### 참고 문서
+### 8단계: (선택) 사용자 전역 설정 또는 컨테이너 설정
 
-* **VS Code: Use MCP servers** — 설정 위치, 형식, Agent 모드/Tools 사용법, Dev Container 연동 등 공식 가이드. ([Visual Studio Code][1])
-* **Atlassian Rovo MCP Server: IDE 설정** — `mcp-remote` 사용, SSE 엔드포인트, 설치 팁(베타). ([Atlassian Support][2])
-* **Atlassian Rovo MCP Server: 소개/베타 안내** — 지원 클라이언트, 보안 모델, 사용 범위. ([Atlassian Support][4])
+* 여러 프로젝트에서 같은 MCP 서버를 쓰려면 VS Code에서 **MCP: Open User Configuration** 후 전역 `mcp.json` 설정
+* Dev Container 환경에서는 `devcontainer.json` 내 `customizations.vscode.mcp.servers` 항목에 동일 MCP 설정 추가
 
 ---
 
-[1]: https://code.visualstudio.com/docs/copilot/customization/mcp-servers "Use MCP servers in VS Code"
-[2]: https://support.atlassian.com/atlassian-rovo-mcp-server/docs/setting-up-ides/?utm_source=chatgpt.com "Setting up IDEs (desktop clients) | Atlassian Rovo MCP ..."
-[3]: https://docs.github.com/copilot/customizing-copilot/using-model-context-protocol/extending-copilot-chat-with-mcp?utm_source=chatgpt.com "Extending GitHub Copilot Chat with the Model Context ..."
-[4]: https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/?utm_source=chatgpt.com "Getting started with the Atlassian Rovo MCP Server"
+이렇게 단계별로 순차적으로 따라가면, 학생들이 손쉽게 **Atlassian API 토큰 발급 → VS Code MCP 서버 등록 → Copilot에서 Confluence 기능 사용**까지 실행해 볼 수 있을 거예요.
+
+필요하시면 이걸 PPT 버전으로 바꿔 드릴까요?
+
+[1]: https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/?utm_source=chatgpt.com "Manage API tokens for your Atlassian account"
+[2]: https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/?utm_source=chatgpt.com "Getting started with the Atlassian Rovo MCP Server"
