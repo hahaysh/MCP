@@ -31,6 +31,8 @@
 2. 루트 디렉터리에 `.vscode` 폴더가 없다면 생성
 3. `.vscode/mcp.json` 파일 생성
 
+> ✅ vs code 환경구성이 어렵다면, codespace를 활성화 해서 작업을 합니다..
+
 ---
 
 ### 3단계: `.vscode/mcp.json` 내용 채우기 (mcp-remote 방식 권장)
