@@ -162,7 +162,8 @@ def create_page(req: CreatePageRequest):
   }
 }
 ```
-codespace에서 실행시에는 아래로 설정
+codespace에서 실행시에는 http://localhost:8000/ 루트를 보지 못해서 문제가 생길수 있기 때문에 VS Code에게 직접 OpenAPI 스키마 경로를 알려주면 됩니다.
+아래로 설정.
 ```json
 {
   "servers": {
