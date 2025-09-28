@@ -1,36 +1,89 @@
-# 🔧 부록: 도메인 내부에서 Confluence MCP 서버 직접 구현하기
-
-## 1. 왜 자체 서버를 구현하나요?
-
-* **사내 도메인 보안 정책** 때문에 외부 Atlassian Rovo MCP 서버(`https://mcp.atlassian.com/v1/sse`)를 직접 쓰기 어려울 수 있습니다.
-* 이 경우, **Confluence REST API**를 직접 호출하는 **MCP 서버**를 사내 인프라에 띄우고, Copilot은 그 MCP 서버를 호출하도록 구성하면 됩니다.
+## 🎯 실습 가이드: VS Code + Confluence 자체 Python MCP 서버 연동 단계별
 
 ---
 
-## 2. MCP 서버 기본 구조 (Python)
+### 준비: 필수 사항 점검
 
-아래는 **Python 기반 FastAPI**로 Confluence REST API를 MCP 표준 규격에 맞춰 감싸는 최소 예시입니다.
+✔ VS Code 설치 + GitHub Copilot 확장 설치 및 로그인
+✔ Python ≥ 3.10 설치 (3.11/3.12 권장)
+✔ Atlassian Cloud 계정 (Confluence 사용 가능)
+✔ Confluence API 토큰 발급 (계정 이메일과 함께 사용)
+✔ 조직 네트워크나 방화벽 정책이 Confluence API 호출을 허용하는지 확인
+
+---
+
+### 1단계: Confluence 연결 정보 확인하기
+
+이 단계에서는 `mcp.json` 설정에 입력할 **Confluence URL, 사용자 이메일(Username), API 토큰**을 미리 준비합니다.
+
+#### 1. Confluence URL
+
+* 사용 중인 [Confluence 사이트](https://www.atlassian.com/ko/software/confluence)에 로그인했을 때 브라우저 주소창에 표시되는 **기본 URL**입니다.
+* 메모장 등에 복사해 두세요.
+* **예시**: `https://your-domain.atlassian.net/wiki`
+
+#### 2. Confluence 사용자 이름 (Username)
+
+* Confluence(Atlassian) 계정에 로그인할 때 사용하는 **본인 이메일 주소**입니다.
+* 메모장 등에 복사해 두세요.
+* **예시**: `your-email@example.com`
+
+#### 3. Confluence API 토큰 (API Token)
+
+API 토큰은 비밀번호 대신 프로그램이 Confluence에 안전하게 접근할 수 있도록 해주는 인증 키입니다.
+
+1. 브라우저에서 Atlassian API 토큰 발급 페이지 접속 → [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. **Create API token** 버튼 클릭
+3. 이름(Label)을 입력 (예: `python-mcp-token`)
+4. **Create** 버튼 클릭 → 새 토큰 생성
+5. 화면에 나타난 토큰을 **즉시 복사 및 안전한 곳에 저장**
+
+   > ⚠️ 토큰은 화면을 닫으면 다시 볼 수 없으니 반드시 안전하게 보관하세요.
+
+---
+
+> ✅ 준비된 URL, 이메일, API 토큰은 VS Code와 Confluence 사이에서 **자체 Python MCP 서버**의 REST API 인증에 사용됩니다.
+
+---
+
+### 2단계: Python MCP 서버 코드 준비
+
+> ✅ 이후의 진행은 codespace에서 진행을 합니다.
+> 작업은 dev20250926 브랜치를 만들어서 작업합니다. `git switch -c dev20250926`
+
+프로젝트 폴더 안에 `server_confluence.py` 파일을 생성하고 아래 코드를 붙여 넣으세요:
 
 ```python
-# server_confluence.py
 import os
 import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
 
-app = FastAPI()
+# .env 파일 로드
+load_dotenv()
 
-CONFLUENCE_URL = os.getenv("CONFLUENCE_URL", "https://your-company.atlassian.net/wiki")
-USERNAME = os.getenv("ATLASSIAN_EMAIL", "you@example.com")
-API_TOKEN = os.getenv("ATLASSIAN_API_TOKEN", "your_api_token")
+app = FastAPI(title="Confluence MCP Server")
 
-auth = HTTPBasicAuth(USERNAME, API_TOKEN)
+CONFLUENCE_URL = os.getenv("CONFLUENCE_URL")
+EMAIL = os.getenv("ATLASSIAN_EMAIL")
+API_TOKEN = os.getenv("ATLASSIAN_API_TOKEN")
 
-# === MCP 도구: 페이지 검색 ===
+auth = HTTPBasicAuth(EMAIL, API_TOKEN)
+
 class SearchRequest(BaseModel):
     cql: str
     limit: int = 5
+
+class GetPageRequest(BaseModel):
+    page_id: str
+
+class CreatePageRequest(BaseModel):
+    space: str
+    title: str
+    body: str
+    parent_id: str | None = None
 
 @app.post("/tools/search_pages")
 def search_pages(req: SearchRequest):
@@ -38,25 +91,70 @@ def search_pages(req: SearchRequest):
     resp = requests.get(url, params={"cql": req.cql, "limit": req.limit}, auth=auth)
     resp.raise_for_status()
     return resp.json()
-```
 
-> 이 서버는 **MCP 표준**에 맞게 `/tools/...` 엔드포인트를 노출하여 Copilot이 사용할 수 있는 “도구(tools)”로 등록됩니다.
+@app.post("/tools/get_page")
+def get_page(req: GetPageRequest):
+    url = f"{CONFLUENCE_URL}/rest/api/content/{req.page_id}"
+    params = {"expand": "body.storage,version"}
+    resp = requests.get(url, params=params, auth=auth)
+    resp.raise_for_status()
+    return resp.json()
+
+@app.post("/tools/create_page")
+def create_page(req: CreatePageRequest):
+    url = f"{CONFLUENCE_URL}/rest/api/content/"
+    data = {
+        "type": "page",
+        "title": req.title,
+        "space": {"key": req.space},
+        "body": {"storage": {"value": req.body, "representation": "storage"}}
+    }
+    if req.parent_id:
+        data["ancestors"] = [{"id": req.parent_id}]
+    resp = requests.post(url, json=data, auth=auth)
+    resp.raise_for_status()
+    return resp.json()
+```
 
 ---
 
-## 3. 로컬 실행
+### 3단계: Python 환경 설정 & 서버 실행
 
-```bash
-uvicorn server_confluence:app --host 0.0.0.0 --port 8000
-```
+1. 가상환경 생성 및 패키지 설치
 
-> Docker로 감싸 배포하면 내부 네트워크에서 컨테이너 형태로도 운영 가능합니다.
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate   # (Windows: .venv\Scripts\activate)
+   pip install fastapi uvicorn requests pydantic python-dotenv
+   ```
+
+2. 환경설정을 위해서 `.env` 파일을 준비합니다.
+   (`.env` 파일은 프로젝트 루트에 위치)
+
+   ```
+   CONFLUENCE_URL=https://your-domain.atlassian.net/wiki
+   ATLASSIAN_EMAIL=you@example.com
+   ATLASSIAN_API_TOKEN=your_api_token
+   ```
+
+3. 서버 실행
+
+   ```bash
+   uvicorn server_confluence:app --host 0.0.0.0 --port 8000
+   ```
+codespace에서 실행시
+   ```bash
+   uvicorn server_confluence:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips="*"
+   ```
+
+   실행 후 `http://localhost:8000/docs`에 접속하면 API 문서를 확인할 수 있습니다.
+> codespace환경이면 필히 "https://super-broccoli-9qp7p4vq5c799w-8000.app.github.dev/docs" 맨뒤쪽에 /docs <-- 경로를 꼭 확인하세요.
 
 ---
 
-## 4. VS Code MCP 설정 (`.vscode/mcp.json`)
+### 4단계: VS Code `mcp.json` 설정
 
-사내 MCP 서버를 등록하는 예시입니다.
+프로젝트 루트 `.vscode/mcp.json` 파일에 아래를 작성합니다:
 
 ```json
 {
@@ -68,41 +166,71 @@ uvicorn server_confluence:app --host 0.0.0.0 --port 8000
   }
 }
 ```
-
-* `url` 부분을 사내 도메인 서버 주소로 교체하면, 팀 전체가 같은 MCP 서버를 공유할 수 있습니다.
-* 예: `"url": "http://mcp.confluence.mycorp.local:8000"`
-
----
-
-## 5. GitHub Copilot에서 활용
-
-1. VS Code에서 `mcp.json`을 저장 → **Start** 버튼으로 서버 시작
-2. Copilot Chat (에이전트 모드) → Tools(🔧) → `MCP Server: confluence-local` 선택
-3. 이제 Confluence 관련 프롬프트 실행 시 MCP 서버가 내부 REST API를 호출하게 됩니다.
-
-예시:
-
-```
-Search for pages with label "runbook" mentioning "python"
+codespace에서 실행시에는 http://localhost:8000/ 루트를 보지 못해서 문제가 생길수 있기 때문에 VS Code에게 직접 OpenAPI 스키마 경로를 알려주면 됩니다.
+아래로 설정.
+```json
+{
+  "servers": {
+    "confluence-local": {
+      "type": "openapi",
+      "url": "http://localhost:8000/openapi.json"
+    }
+  }
+}
 ```
 
----
-
-## 6. 운영 시 고려사항
-
-* **인증**: API 토큰을 환경 변수/시크릿 매니저(K8s Secret, Vault 등)에 저장
-* **보안**: HTTPS 적용 + 내부 인증(사내 SSO, JWT 등)
-* **확장**: `/tools/create_page`, `/tools/get_page`, `/tools/list_spaces` 등 REST API 매핑
-* **배포**: Docker/K8s로 컨테이너화 → 도메인 내 MCP Gateway로 서비스
+> ✅ 이제 VS Code에서 MCP 서버를 **로컬 Python 서버**로 인식하게 됩니다.
 
 ---
 
-👉 요약하자면:
+### 5단계: Copilot 에이전트 모드 설정 & 도구 확인
 
-* 외부 MCP 서버를 쓰기 힘든 환경에서는 **Confluence REST API를 감싼 Python FastAPI MCP 서버**를 직접 띄운다.
-* VS Code `mcp.json`에서 그 서버를 등록한다.
-* Copilot이 내부 MCP 서버를 통해 안전하게 Confluence를 사용할 수 있다.
+1. VS Code에서 **Copilot Chat** 열기
+2. 상단 드롭다운에서 **Agent 모드** 선택
+3. **Tools**에서 → `MCP Server: confluence-local` 확인 및 활성화
+4. "채팅 메시지를 보낼 때 MCP 서버 자동으로 시작..."을 체크
+<img width="362" height="272" alt="image" src="https://github.com/user-attachments/assets/ef9c4527-7e38-4272-a41a-b17e9706a6f9" />
 
 ---
 
-혹시 원하시면, 제가 `create_page`, `get_page`까지 포함된 **풀셋 Python MCP 서버 샘플 코드**를 작성해 드릴까요?
+### 6단계: 예시 프롬프트로 기능 테스트
+
+* 페이지 검색:
+
+  ```
+  Search Confluence pages about "python onboarding" in space HR
+  ```
+
+* 페이지 조회:
+
+  ```
+  Get the Confluence page with ID 1234567
+  ```
+
+* 페이지 생성:
+
+  ```
+  Create a Confluence page in space ENG titled "Lab Notes"
+  with sections: Summary and Action Items
+  ```
+
+---
+
+### 7단계: 문제 & 해결 체크리스트
+
+| 문제               | 원인 가능성                         | 해결 방법                                                |
+| ---------------- | ------------------------------ | ---------------------------------------------------- |
+| 서버 시작 안 됨        | 패키지 설치 누락, 포트 충돌               | `pip install fastapi uvicorn requests` 확인 / 다른 포트 사용 |
+| MCP 도구 안 보임      | Agent 모드 미선택, `mcp.json` 문법 오류 | Agent 모드 확인 / `mcp.json` 다시 저장                       |
+| 401 Unauthorized | 이메일·토큰 값 불일치                   | 환경 변수 값 다시 확인 / 토큰 재발급                               |
+| 403 Forbidden    | API 권한 부족                      | 계정 권한 확인 (Confluence 관리자 문의)                         |
+
+---
+
+### 8단계: 확장 아이디어
+
+* `update_page`, `list_spaces` 등 추가 도구 구현
+* Dockerfile로 MCP 서버 컨테이너화 → 팀 내 공유
+* DevContainer `customizations.vscode.mcp.servers`에 등록하여 자동 설정
+
+---
