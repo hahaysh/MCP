@@ -187,7 +187,9 @@ codespace에서 실행시에는 http://localhost:8000/ 루트를 보지 못해�
 
 1. VS Code에서 **Copilot Chat** 열기
 2. 상단 드롭다운에서 **Agent 모드** 선택
-3. **Tools**에서 → `MCP Server: confluence-local` 확인
+3. **Tools**에서 → `MCP Server: confluence-local` 확인 및 활성화
+4. "채팅 메시지를 보낼 때 MCP 서버 자동으로 시작..."을 체크
+<img width="362" height="272" alt="image" src="https://github.com/user-attachments/assets/ef9c4527-7e38-4272-a41a-b17e9706a6f9" />
 
 ---
 
@@ -234,7 +236,3 @@ codespace에서 실행시에는 http://localhost:8000/ 루트를 보지 못해�
 ---
 
 ✅ 이렇게 하면 **Node.js, mcp-remote, OAuth 로그인 없이** 순수 Python + API 토큰 기반으로 Confluence를 Copilot과 연결할 수 있습니다.
-
----
-
-원하시면 이 버전을 **PPT 발표용 5~6장 요약**으로도 정리해드릴까요?
