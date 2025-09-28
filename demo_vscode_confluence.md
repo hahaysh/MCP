@@ -128,9 +128,7 @@ def create_page(req: CreatePageRequest):
    pip install fastapi uvicorn requests pydantic python-dotenv
    ```
 
-   > ✅ `python-dotenv` 패키지를 추가 설치해야 `.env` 파일을 불러올 수 있습니다.
-
-2. 환경 변수 등록 대신 `.env` 파일을 준비합니다.
+2. 환경설정을 위해서 `.env` 파일을 준비합니다.
    (`.env` 파일은 프로젝트 루트에 위치)
 
    ```
@@ -139,8 +137,6 @@ def create_page(req: CreatePageRequest):
    ATLASSIAN_API_TOKEN=your_api_token
    ```
 
-   > 더 이상 `export`나 `set` 명령어로 직접 등록할 필요가 없습니다.
-
 3. 서버 실행
 
    ```bash
@@ -148,6 +144,7 @@ def create_page(req: CreatePageRequest):
    ```
 
    실행 후 `http://localhost:8000/docs`에 접속하면 API 문서를 확인할 수 있습니다.
+> codespace환경이면 필히 "https://super-broccoli-9qp7p4vq5c799w-8000.app.github.dev/docs" 맨뒤쪽에 docs <-- 경로를 꼭 확인하세요.
 
 ---
 
