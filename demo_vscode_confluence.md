@@ -1,8 +1,3 @@
-좋습니다 👍 요청해주신 대로 **“자체 Python MCP 서버 사용”** 흐름으로 기존 가이드를 꼼꼼히 다듬어 업데이트했습니다.
-즉, Node.js·`mcp-remote`·OAuth 로그인은 빠지고, 대신 **API 토큰 + Python FastAPI 서버 + VS Code 등록**으로 바꿨습니다.
-
----
-
 ## 🎯 실습 가이드: VS Code + Confluence 자체 Python MCP 서버 연동 단계별
 
 ---
